@@ -1,0 +1,56 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-bookworm
+        env:
+          POSTGRES_USER: filmnama
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: filmnama_test
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd "pg_isready -U filmnama -d filmnama_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run prisma:generate
+      - run: npm run migrate:deploy
+        env:
+          DATABASE_URL: postgresql://filmnama:postgres@127.0.0.1:55432/filmnama_test?schema=public
+      - run: npm test
+        env:
+          DATABASE_URL: postgresql://filmnama:postgres@127.0.0.1:55432/filmnama_test?schema=public
+      - run: npm run lint
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run lint

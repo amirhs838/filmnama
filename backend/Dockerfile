@@ -14,4 +14,5 @@ COPY --chown=node:node . .
 RUN npm run prisma:generate && npm run build
 
 EXPOSE 4000
-CMD ["node", "dist/src/main.js"]
+# Migrate on boot (safe, idempotent), then serve. Never use db push/sync here.
+CMD ["sh", "-c", "npx prisma migrate deploy && exec node dist/src/main.js"]
