@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { Request, Response } from 'express';
 import serverlessExpress from '@vendia/serverless-express';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
@@ -26,7 +26,7 @@ async function handler() {
   return cached;
 }
 
-export default async function (req: VercelRequest, res: VercelResponse) {
+export default async function (req: Request, res: Response) {
   const handle = await handler();
   return handle(req, res);
 }
