@@ -8,6 +8,7 @@ import { configureApp } from '../src/security/runtime';
 
 /*
  * Vercel serverless entry: the Express app boots once per warm instance.
+ * Served for all /api/* routes via vercel.json rewrites.
  * Local `node dist/src/main.js` behavior is unchanged.
  */
 let cached: ReturnType<typeof serverlessExpress> | undefined;
