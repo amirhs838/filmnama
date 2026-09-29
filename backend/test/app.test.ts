@@ -10,7 +10,7 @@ import { AuthRepository } from '../src/auth/auth.repository';
 import { Config } from '../src/infrastructure/config';
 import { Database, RedisStore } from '../src/infrastructure/infrastructure.module';
 import { RevalidationService } from '../src/infrastructure/revalidation.module';
-import { createApp } from '../src/main';
+import { createApp } from '../src/create-app';
 import { origin, testConfig } from './auth.fixture';
 
 test('AppModule wires HTTP routes with mocked infrastructure', async (t) => {

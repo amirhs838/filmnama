@@ -1,5 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "builds": [{ "src": "api/handler.ts", "use": "@vercel/node" }],
-  "routes": [{ "src": "/api/(.*)", "dest": "/api/handler.ts" }]
+  "crons": [
+    {
+      "path": "/api/v1/internal/revalidation/drain",
+      "schedule": "0 3 * * *"
+    }
+  ]
 }
