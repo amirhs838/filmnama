@@ -1,0 +1,358 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+enum Role {
+  SUPER_ADMIN
+  CONTENT_MANAGER
+  BLOG_EDITOR
+}
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+enum LeadStatus {
+  NEW
+  CONTACTED
+  CLOSED
+}
+model User {
+  id String @id @default(cuid())
+  email String @unique
+  passwordHash String
+  role Role @default(BLOG_EDITOR)
+  active Boolean @default(true)
+  failedLogins Int @default(0)
+  lockedUntil DateTime?
+  locale String @default("fa")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  sessions RefreshSession[]
+  audits AuditLog[]
+  posts Post[]
+  @@index([active, deletedAt])
+}
+model RefreshSession {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  familyId String
+  tokenHash String @unique
+  csrfHash String
+  expiresAt DateTime
+  consumedAt DateTime?
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([familyId, revokedAt])
+  @@index([userId, expiresAt])
+}
+model Department {
+  id String @id @default(cuid())
+  slug String @unique
+  label String
+  latin String
+  description String @default("")
+  locale String @default("fa")
+  status ContentStatus @default(DRAFT)
+  seoTitle String?
+  seoDescription String?
+  canonicalUrl String?
+  noindex Boolean @default(false)
+  publishedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  courses Course[]
+  @@index([status, deletedAt, slug])
+}
+model Course {
+  id String @id @default(cuid())
+  slug String
+  departmentId String
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  title String
+  latin String
+  description String
+  level String
+  duration String
+  iconKey String
+  contentHtml String @default("")
+  syllabus String[] @default([])
+  locale String @default("fa")
+  status ContentStatus @default(DRAFT)
+  seoTitle String?
+  seoDescription String?
+  canonicalUrl String?
+  noindex Boolean @default(false)
+  publishedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  coverMediaId String?
+  coverMedia Media? @relation("CourseCoverMedia", fields: [coverMediaId], references: [id], onDelete: SetNull)
+  instructors CourseInstructor[]
+  faq CourseFaq[]
+  leads Lead[]
+  // Optional editor-defined public URL (stored without leading slash,
+  // e.g. "training-courses/فن-بیان"). Served by the frontend catch-all route.
+  customPath String? @unique
+  @@unique([departmentId, slug])
+  @@index([status, deletedAt, id])
+  @@index([departmentId, status])
+  @@index([coverMediaId])
+}
+model Instructor {
+  id String @id @default(cuid())
+  slug String @unique
+  name String
+  bio String
+  image String?
+  locale String @default("fa")
+  status ContentStatus @default(DRAFT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  courses CourseInstructor[]
+  // Optional editor-defined public URL (stored without leading slash).
+  customPath String? @unique
+  @@index([status, deletedAt])
+}
+model CourseInstructor {
+  courseId String
+  instructorId String
+  position Int @default(0)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  instructor Instructor @relation(fields: [instructorId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@id([courseId, instructorId])
+  @@index([instructorId])
+}
+model CourseFaq {
+  id String @id @default(cuid())
+  courseId String
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  question String
+  answer String
+  position Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([courseId, position])
+}
+model Post {
+  id String @id @default(cuid())
+  slug String @unique
+  title String
+  excerpt String @default("")
+  contentHtml String @default("")
+  authorId String
+  author User @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  categoryId String?
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  tags PostTag[]
+  locale String @default("fa")
+  status ContentStatus @default(DRAFT)
+  seoTitle String?
+  seoDescription String?
+  canonicalUrl String?
+  noindex Boolean @default(false)
+  publishedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  coverMediaId String?
+  coverMedia Media? @relation("PostCoverMedia", fields: [coverMediaId], references: [id], onDelete: SetNull)
+  // Optional editor-defined public URL (stored without leading slash).
+  customPath String? @unique
+  @@index([status, deletedAt, publishedAt])
+  @@index([authorId])
+  @@index([categoryId])
+  @@index([coverMediaId])
+}
+model Category {
+  id String @id @default(cuid())
+  slug String @unique
+  title String
+  locale String @default("fa")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  posts Post[]
+}
+model Tag {
+  id String @id @default(cuid())
+  slug String @unique
+  title String
+  locale String @default("fa")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  posts PostTag[]
+}
+model PostTag {
+  postId String
+  tagId String
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag Tag @relation(fields: [tagId], references: [id], onDelete: Restrict)
+  @@id([postId, tagId])
+  @@index([tagId])
+}
+model Media {
+  id String @id @default(cuid())
+  storageKey String @unique
+  mimeType String
+  size Int
+  alt String @default("")
+  locale String @default("fa")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  variants MediaVariant[]
+  galleryItems GalleryItem[]
+  portfolioItems PortfolioItem[]
+  postCovers Post[] @relation("PostCoverMedia")
+  courseCovers Course[] @relation("CourseCoverMedia")
+  albumCovers GalleryAlbum[] @relation("AlbumCoverMedia")
+}
+model MediaVariant {
+  id String @id @default(cuid())
+  mediaId String
+  media Media @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  name String
+  storageKey String @unique
+  width Int
+  height Int
+  mimeType String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([mediaId, name])
+}
+model GalleryAlbum {
+  id String @id @default(cuid())
+  slug String @unique
+  title String
+  description String @default("")
+  locale String @default("fa")
+  status ContentStatus @default(DRAFT)
+  seoTitle String?
+  seoDescription String?
+  canonicalUrl String?
+  noindex Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  coverMediaId String?
+  coverMedia Media? @relation("AlbumCoverMedia", fields: [coverMediaId], references: [id], onDelete: SetNull)
+  items GalleryItem[]
+  @@index([status, deletedAt])
+  @@index([coverMediaId])
+}
+model GalleryItem {
+  id String @id @default(cuid())
+  albumId String
+  mediaId String
+  album GalleryAlbum @relation(fields: [albumId], references: [id], onDelete: Restrict)
+  media Media @relation(fields: [mediaId], references: [id], onDelete: Restrict)
+  title String
+  position Int @default(0)
+  locale String @default("fa")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  @@index([albumId, position])
+  @@index([mediaId])
+}
+model PortfolioItem {
+  id String @id @default(cuid())
+  slug String @unique
+  title String
+  student String
+  category String
+  mediaId String?
+  media Media? @relation(fields: [mediaId], references: [id], onDelete: Restrict)
+  contentHtml String @default("")
+  locale String @default("fa")
+  status ContentStatus @default(DRAFT)
+  seoTitle String?
+  seoDescription String?
+  canonicalUrl String?
+  noindex Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  // Optional editor-defined public URL (stored without leading slash).
+  customPath String? @unique
+  @@index([status, deletedAt])
+  @@index([mediaId])
+}
+model Lead {
+  id String @id @default(cuid())
+  name String
+  phone String
+  email String?
+  message String?
+  courseId String?
+  course Course? @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  status LeadStatus @default(NEW)
+  consentAt DateTime
+  locale String @default("fa")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  @@index([status, createdAt])
+  @@index([courseId])
+}
+model SiteSettings {
+  id Int @id @default(1)
+  name String
+  description String
+  contact Json @default("{}")
+  locale String @default("fa")
+  seoTitle String?
+  seoDescription String?
+  canonicalUrl String?
+  noindex Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+model Redirect {
+  id String @id @default(cuid())
+  source String @unique
+  destination String?
+  locale String @default("fa")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([destination])
+}
+model AuditLog {
+  id String @id @default(cuid())
+  actorId String?
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action String
+  entityType String
+  entityId String
+  metadata Json @default("{}")
+  createdAt DateTime @default(now())
+  @@index([actorId, createdAt])
+  @@index([entityType, entityId, createdAt])
+}
+model ContentRevision {
+  id Int @id @default(1)
+  version Int @default(0)
+  updatedAt DateTime @updatedAt
+}
+model RevalidationOutbox {
+  id String @id @default(cuid())
+  paths String[]
+  version Int
+  deliveredAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([deliveredAt, createdAt])
+}

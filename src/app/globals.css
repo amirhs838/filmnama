@@ -1,0 +1,284 @@
+@import "tailwindcss";
+
+/* ============================================================
+   FILMNAMA — Design System (Tailwind v4 CSS-first)
+   Palette: Ivory / Ink / Cinematic Red
+   ============================================================ */
+
+@theme {
+  /* Color tokens */
+  --color-ivory: #f4f2ed;
+  --color-ivory-2: #eeece6;
+  --color-ivory-3: #e9e7e1;
+  --color-ink: #111111;
+  --color-ink-2: #171717;
+  --color-ink-3: #1f1f1f;
+  --color-smoke: #6e6b63; /* muted text on ivory */
+  --color-fog: #a7a49c; /* muted text on ink */
+  --color-red: #d71920;
+  --color-red-deep: #b0121a;
+  --color-line: rgba(17, 17, 17, 0.1);
+  --color-line-strong: rgba(17, 17, 17, 0.22);
+  --color-line-light: rgba(244, 242, 237, 0.12);
+
+  /* Font */
+  --font-sans: var(--font-vazirmatn), "Vazirmatn", Tahoma, Arial, sans-serif;
+
+  /* Motion tokens */
+  --ease-out-expo: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-smooth: cubic-bezier(0.45, 0, 0.15, 1);
+
+  /* Layout */
+  --container-site: 1440px;
+
+  /* Radius */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+}
+
+/* ------------------------------------------------------------
+   Base
+   ------------------------------------------------------------ */
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 88px;
+}
+
+body {
+  background: var(--color-ivory);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--color-red);
+  color: var(--color-ivory);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-red);
+  outline-offset: 3px;
+}
+
+/* Thin custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-ivory-3);
+}
+::-webkit-scrollbar-thumb {
+  background: #b9b6ad;
+  border-radius: 0;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-red);
+}
+
+/* ------------------------------------------------------------
+   Layout utilities
+   ------------------------------------------------------------ */
+
+@utility container-site {
+  width: 100%;
+  max-width: var(--container-site);
+  margin-inline: auto;
+  padding-inline: clamp(1.25rem, 4vw, 3.5rem);
+}
+
+@utility section-y {
+  padding-block: clamp(4.5rem, 9vw, 8.5rem);
+}
+
+/* ------------------------------------------------------------
+   Typography utilities (Persian-tuned line-heights)
+   ------------------------------------------------------------ */
+
+@utility text-display {
+  font-size: clamp(2.1rem, 5.2vw, 4.4rem);
+  line-height: 1.3;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+@utility text-h1 {
+  font-size: clamp(2rem, 4.4vw, 3.4rem);
+  line-height: 1.35;
+  font-weight: 800;
+}
+@utility text-h2 {
+  font-size: clamp(1.8rem, 3.6vw, 3rem);
+  line-height: 1.35;
+  font-weight: 800;
+}
+
+@utility text-h3 {
+  font-size: clamp(1.15rem, 1.8vw, 1.45rem);
+  line-height: 1.5;
+  font-weight: 700;
+}
+
+@utility text-lead {
+  font-size: clamp(0.98rem, 1.35vw, 1.15rem);
+  line-height: 2.1;
+  font-weight: 400;
+}
+
+@utility text-caption {
+  font-size: 0.78rem;
+  line-height: 1.8;
+}
+
+@utility text-label-latin {
+  font-size: 0.68rem;
+  line-height: 1.6;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+/* ------------------------------------------------------------
+   Texture utilities
+   ------------------------------------------------------------ */
+
+/* Fine architectural grid — dark lines for ivory surfaces */
+@utility grid-bg {
+  background-image: linear-gradient(
+      to left,
+      rgba(17, 17, 17, 0.05) 1px,
+      transparent 1px
+    ),
+    linear-gradient(to bottom, rgba(17, 17, 17, 0.05) 1px, transparent 1px);
+  background-size: 72px 72px;
+}
+
+/* Same grid for black surfaces */
+@utility grid-bg-light {
+  background-image: linear-gradient(
+      to left,
+      rgba(244, 242, 237, 0.045) 1px,
+      transparent 1px
+    ),
+    linear-gradient(to bottom, rgba(244, 242, 237, 0.045) 1px, transparent 1px);
+  background-size: 72px 72px;
+}
+
+/* Film grain / paper noise */
+@utility noise-overlay {
+  position: relative;
+}
+.noise-overlay::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Dotted cluster (radial dots) used in hero decorations */
+@utility dots-bg {
+  background-image: radial-gradient(
+    rgba(17, 17, 17, 0.35) 1.1px,
+    transparent 1.1px
+  );
+  background-size: 12px 12px;
+}
+@utility dots-bg-red {
+  background-image: radial-gradient(
+    rgba(215, 25, 32, 0.55) 1.1px,
+    transparent 1.1px
+  );
+  background-size: 12px 12px;
+}
+@utility dots-bg-light {
+  background-image: radial-gradient(
+    rgba(244, 242, 237, 0.4) 1.1px,
+    transparent 1.1px
+  );
+  background-size: 12px 12px;
+}
+
+/* Huge outlined latin word used as background typography */
+@utility text-outline {
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(244, 242, 237, 0.14);
+}
+@utility text-outline-dark {
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(17, 17, 17, 0.12);
+}
+
+/* Logo mark: the file is transparent, so the halo follows the calligraphy
+   strokes themselves (drop-shadow uses the alpha shape, not a box). */
+.logo-mark {
+  filter: drop-shadow(0 0 1.5px rgba(244, 242, 237, 0.95)) drop-shadow(0 0 7px rgba(244, 242, 237, 0.4));
+}
+
+/* Hide scrollbars on horizontal scrollers while keeping scroll */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ------------------------------------------------------------
+   Marquee
+   ------------------------------------------------------------ */
+
+@keyframes marquee-x {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee-x 36s linear infinite;
+}
+
+/* ------------------------------------------------------------
+   Instructors carousel — autoplay progress fill (5s)
+   ------------------------------------------------------------ */
+
+@keyframes autoplay-fill {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+.autoplay-fill {
+  animation: autoplay-fill 5s linear forwards;
+}
+
+/* ------------------------------------------------------------
+   Reduced motion — respect user preference globally
+   ------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .animate-marquee {
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
