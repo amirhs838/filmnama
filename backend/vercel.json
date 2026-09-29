@@ -1,5 +1,18 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "builds": [{ "src": "api/handler.ts", "use": "@vercel/node" }],
+  "builds": [
+    {
+      "src": "api/handler.ts",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": [
+          "node_modules/.prisma/client/*.{node,so,dll}",
+          "node_modules/@prisma/client/runtime/**",
+          "node_modules/argon2/prebuilds/**",
+          "node_modules/@msgpackr-extract/**/*.node"
+        ]
+      }
+    }
+  ],
   "routes": [{ "src": "/api/(.*)", "dest": "/api/handler.ts" }]
 }
