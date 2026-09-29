@@ -1,7 +1,8 @@
-import { Injectable, Logger, Module, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Controller, Get, Header, HttpCode, Injectable, Logger, Module, OnModuleDestroy, OnModuleInit, Post, Req, UnauthorizedException } from '@nestjs/common';
 import { createHmac } from 'node:crypto';
 import { Job, Queue, Worker } from 'bullmq';
-import { validRevalidationPath } from '../common/validation';
+import { Request } from 'express';
+import { safeEqual, validRevalidationPath } from '../common/validation';
 import { Config } from './config';
 import { Database, InfrastructureModule } from './infrastructure.module';
 
@@ -99,6 +100,22 @@ export class RevalidationService implements OnModuleInit, OnModuleDestroy {
     } catch { throw new Error('Revalidation delivery failed'); }
   }
 
+  /**
+   * Drain pending outbox rows on demand (Vercel Cron calls this; serverless
+   * instances have no reliable timers). Returns per-row outcomes.
+   */
+  async drainOnce(limit = 100): Promise<{ processed: number; delivered: number; failed: number }> {
+    const capped = Math.min(Math.max(limit, 1), 100);
+    const rows = await this.db.revalidationOutbox.findMany({ where: { deliveredAt: null }, orderBy: [{ createdAt: 'asc' }, { id: 'asc' }], take: capped });
+    let delivered = 0;
+    for (const row of rows) {
+      if (this.stopped) break;
+      try { await this.deliver({ id: row.id }); delivered += 1; }
+      catch { this.logger.warn('Revalidation dispatch failed: Revalidation delivery failed'); }
+    }
+    return { processed: rows.length, delivered, failed: rows.length - delivered };
+  }
+
   async onModuleDestroy() {
     this.stopped = true;
     clearInterval(this.interval);
@@ -113,5 +130,24 @@ export class RevalidationService implements OnModuleInit, OnModuleDestroy {
   }
 }
 
-@Module({ imports: [InfrastructureModule], providers: [RevalidationService], exports: [RevalidationService] })
+@Controller('internal/revalidation')
+export class InternalRevalidationController {
+  constructor(private readonly revalidation: RevalidationService, private readonly config: Config) {}
+  // GET alias: some cron providers only issue GET requests.
+  @Get('drain')
+  @Post('drain')
+  @HttpCode(200)
+  @Header('Cache-Control', 'no-store')
+  async drain(@Req() req: Request) {
+    // Vercel Cron sends `Authorization: Bearer $CRON_SECRET` when the env var
+    // exists; anything else (including an unset secret) is refused.
+    const secret = this.config.value.CRON_SECRET;
+    const header = req.headers.authorization ?? '';
+    const presented = header.startsWith('Bearer ') ? header.slice(7) : '';
+    if (!secret || presented.length !== secret.length || !safeEqual(presented, secret)) throw new UnauthorizedException();
+    return this.revalidation.drainOnce(100);
+  }
+}
+
+@Module({ imports: [InfrastructureModule], controllers: [InternalRevalidationController], providers: [RevalidationService], exports: [RevalidationService] })
 export class RevalidationModule {}

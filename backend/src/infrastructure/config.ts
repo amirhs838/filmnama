@@ -16,10 +16,17 @@ const schema = z.object({
   ALLOWED_ORIGINS: z.string().min(1),
   NEXT_REVALIDATE_URL: z.string().url(),
   NEXT_REVALIDATE_SECRET: z.string().min(32),
+  // Optional bearer secret for the Vercel Cron drain endpoint. When absent
+  // the endpoint refuses everything; local polling needs no cron.
+  CRON_SECRET: z.string().min(32).optional(),
   TRUST_PROXY: z.string().default(''),
   ADMIN_IP_ALLOWLIST: z.string().default(''),
   SWAGGER_ENABLED: z.enum(['true', 'false']).default('false'),
   MEDIA_DIR: z.string().min(1).max(500).default('uploads'),
+  // Optional Vercel Blob storage for serverless deployments. When set, binary
+  // uploads go to Blob (public URLs) instead of local MEDIA_DIR; when absent
+  // the local-disk behavior is unchanged.
+  BLOB_READ_WRITE_TOKEN: z.string().min(1).max(500).optional(),
 });
 
 @Injectable()

@@ -45,6 +45,11 @@ export function coverMediaUrl(id: string): string {
   return `/api/v1/public/media/${id}/file`;
 }
 
+/** Blob-hosted storage keys are full https URLs; disk keys are relative. */
+export function isRemoteStorageKey(storageKey: string): boolean {
+  return storageKey.startsWith('https://');
+}
+
 export function toCoverMediaDto(media: { id: string; alt: string } | null | undefined) {
   if (!media) return null;
   return { id: media.id, url: coverMediaUrl(media.id), alt: media.alt };
@@ -199,6 +204,10 @@ export class MediaService {
   async create(actorId: string, input: MediaInput) { return mediaDto(await this.repo.create(actorId, input)); }
   async updateAlt(actorId: string, id: string, input: MediaMetaInput) { return mediaDto(await this.repo.updateAlt(actorId, id, input)); }
   async remove(actorId: string, id: string) { return mediaDto(await this.repo.remove(actorId, id)); }
+  private blobToken(): string | null {
+    const token = this.config?.value.BLOB_READ_WRITE_TOKEN;
+    return typeof token === 'string' && token.length > 0 ? token : null;
+  }
   async upload(actorId: string, file: { buffer: Buffer } | undefined, body: unknown) {
     if (!this.config) throw new BadRequestException('Invalid file');
     if (!file || !Buffer.isBuffer(file.buffer) || file.buffer.length === 0) throw new BadRequestException('Invalid file');
@@ -210,6 +219,20 @@ export class MediaService {
     const ext = EXT_BY_MIME[mime] ?? sniffed?.ext;
     if (!ext || !/^[a-z0-9]{2,5}$/.test(ext)) throw new BadRequestException('Invalid file');
     const filename = `${randomUUID().replace(/-/g, '')}.${ext}`;
+    const blobToken = this.blobToken();
+    if (blobToken) {
+      const { put } = await import('@vercel/blob');
+      const blob = await put(`filmnama/${filename}`, file.buffer, {
+        access: 'public', contentType: mime, addRandomSuffix: false, token: blobToken,
+      }).catch(() => { throw new BadRequestException('Invalid file'); });
+      try {
+        return mediaDto(await this.repo.create(actorId, { storageKey: blob.url, mimeType: mime as MediaInput['mimeType'], size: file.buffer.length, alt }));
+      } catch (error) {
+        const { del } = await import('@vercel/blob');
+        await del(blob.url, { token: blobToken }).catch(() => undefined);
+        throw error;
+      }
+    }
     const mediaDir = getMediaDir(this.config);
     await mkdir(mediaDir, { recursive: true });
     const storageKey = `uploads/${filename}`;
@@ -227,6 +250,7 @@ export class MediaService {
   async filePath(id: string): Promise<{ row: MediaRow; absolute: string }> {
     if (!this.config) throw new NotFoundException('Media not found');
     const row = await this.repo.detail(id);
+    if (isRemoteStorageKey(row.storageKey)) throw new NotFoundException('Media not found');
     const mediaDir = getMediaDir(this.config);
     const absolute = resolveMediaFile(mediaDir, row.storageKey);
     try {
@@ -234,6 +258,12 @@ export class MediaService {
       if (!info.isFile()) throw new Error();
     } catch { throw new NotFoundException('Media not found'); }
     return { row, absolute };
+  }
+  remoteUrl(id: string): Promise<string> {
+    return this.repo.detail(id).then((row) => {
+      if (!isRemoteStorageKey(row.storageKey)) throw new NotFoundException('Media not found');
+      return row.storageKey;
+    });
   }
 }
 
@@ -300,6 +330,14 @@ export class PublicMediaController {
   constructor(private readonly media: MediaService) {}
   @Get(':id/file')
   async file(@Param('id', new SchemaPipe(idSchema)) id: string, @Res() res: Response) {
+    // Blob-hosted bytes (serverless deployments) redirect to the public Blob
+    // URL; disk-hosted bytes stream as before.
+    const remote = await this.media.remoteUrl(id).catch(() => null);
+    if (remote) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      res.redirect(307, remote);
+      return;
+    }
     const { row, absolute } = await this.media.filePath(id);
     // Immutable cache is intentional for content-addressed uploads
     // (<cuid>.<ext> never changes bytes). Do NOT add no-store here.

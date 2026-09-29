@@ -77,7 +77,9 @@ export async function GET(
       headers: { Accept: "image/*,video/mp4" },
       credentials: "omit",
       signal: controller.signal,
-      redirect: "error",
+      // Follow backend redirects to Blob-hosted bytes (serverless deploys);
+      // disk-hosted bytes never redirect, so behavior there is unchanged.
+      redirect: "follow",
       cache: "no-store",
     });
     if (!upstream.ok) {
