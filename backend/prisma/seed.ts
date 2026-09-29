@@ -136,7 +136,9 @@ export async function main() {
   }
   const prisma = new PrismaClient();
   try {
-    await prisma.$transaction((tx) => seedContent(tx, process.env.SEED_COMPLETE_CONTENT === 'true'), { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    // Generous timeout: remote/cloud databases have higher per-query latency
+    // than local Postgres (the default 5s interactive timeout is too tight).
+    await prisma.$transaction((tx) => seedContent(tx, process.env.SEED_COMPLETE_CONTENT === 'true'), { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 120000, maxWait: 30000 });
   } finally {
     await prisma.$disconnect();
   }
