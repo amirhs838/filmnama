@@ -204,9 +204,17 @@ export class MediaService {
   async create(actorId: string, input: MediaInput) { return mediaDto(await this.repo.create(actorId, input)); }
   async updateAlt(actorId: string, id: string, input: MediaMetaInput) { return mediaDto(await this.repo.updateAlt(actorId, id, input)); }
   async remove(actorId: string, id: string) { return mediaDto(await this.repo.remove(actorId, id)); }
-  private blobToken(): string | null {
+  /**
+   * Blob auth when the backend runs on Vercel: a static token when
+   * BLOB_READ_WRITE_TOKEN is set, otherwise the connected store's OIDC
+   * identity (BLOB_STORE_ID is injected by `vercel storage connect`).
+   * Absent both → local disk (unchanged legacy behavior).
+   */
+  private blobAuth(): { token?: string } | null {
     const token = this.config?.value.BLOB_READ_WRITE_TOKEN;
-    return typeof token === 'string' && token.length > 0 ? token : null;
+    if (typeof token === 'string' && token.length > 0) return { token };
+    if (typeof process.env.BLOB_STORE_ID === 'string' && process.env.BLOB_STORE_ID.length > 0) return {};
+    return null;
   }
   async upload(actorId: string, file: { buffer: Buffer } | undefined, body: unknown) {
     if (!this.config) throw new BadRequestException('Invalid file');
@@ -219,17 +227,17 @@ export class MediaService {
     const ext = EXT_BY_MIME[mime] ?? sniffed?.ext;
     if (!ext || !/^[a-z0-9]{2,5}$/.test(ext)) throw new BadRequestException('Invalid file');
     const filename = `${randomUUID().replace(/-/g, '')}.${ext}`;
-    const blobToken = this.blobToken();
-    if (blobToken) {
+    const blobAuth = this.blobAuth();
+    if (blobAuth) {
       const { put } = await import('@vercel/blob');
       const blob = await put(`filmnama/${filename}`, file.buffer, {
-        access: 'public', contentType: mime, addRandomSuffix: false, token: blobToken,
+        access: 'public', contentType: mime, addRandomSuffix: false, ...blobAuth,
       }).catch(() => { throw new BadRequestException('Invalid file'); });
       try {
         return mediaDto(await this.repo.create(actorId, { storageKey: blob.url, mimeType: mime as MediaInput['mimeType'], size: file.buffer.length, alt }));
       } catch (error) {
         const { del } = await import('@vercel/blob');
-        await del(blob.url, { token: blobToken }).catch(() => undefined);
+        await del(blob.url, { ...blobAuth }).catch(() => undefined);
         throw error;
       }
     }
