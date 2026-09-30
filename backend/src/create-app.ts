@@ -15,9 +15,9 @@ export async function createApp(factory?: () => Promise<NestExpressApplication>)
     app.enableShutdownHooks();
     await app.init();
     return app;
-  } catch {
+  } catch (error) {
     if (app) await app.close().catch(() => undefined);
-    throw new Error('Server initialization failed');
+    throw new Error('Server initialization failed', { cause: error });
   }
 }
 
