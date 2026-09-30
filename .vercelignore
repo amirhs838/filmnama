@@ -1,12 +1,10 @@
-# Vercel deployment excludes (frontend project only)
+# Vercel deployment excludes. NOTE: this file applies to BOTH Vercel projects
+# (frontend at repo root AND backend with rootDirectory=backend), and patterns
+# without a slash match at any depth — so keep backend/ uploadable and only
+# drop secrets, logs and junk. The frontend imports
+# backend/prisma/course-content.json; the backend project needs all of backend/.
 .env*
-# backend/ is the NestJS server (deployed elsewhere); the frontend only needs
-# the shared mock-content JSON, so exclude everything else under backend/.
-backend/*
-!backend/prisma/
-backend/prisma/*
-!backend/prisma/course-content.json
-api/
 *.log
+/api/
 .test-dist/
 coverage/
