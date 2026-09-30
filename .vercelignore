@@ -1,6 +1,11 @@
 # Vercel deployment excludes (frontend project only)
 .env*
-backend/
+# backend/ is the NestJS server (deployed elsewhere); the frontend only needs
+# the shared mock-content JSON, so exclude everything else under backend/.
+backend/*
+!backend/prisma/
+backend/prisma/*
+!backend/prisma/course-content.json
 api/
 *.log
 .test-dist/
