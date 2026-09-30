@@ -1,4 +1,7 @@
 import 'reflect-metadata';
+// Direct @nestjs/core import: marks this file as the NestJS entrypoint for
+// @vercel/nestjs detection (it scans entrypoint content for '@nestjs/core').
+import '@nestjs/core';
 import { Request, Response } from 'express';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { createApp, bootstrap } from './create-app';
