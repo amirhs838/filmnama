@@ -6,6 +6,10 @@ import { contentMetadata } from "@/lib/content-seo";
 
 export const revalidate = 3600;
 
+// Content comes from the backend API at request time: never prerender this
+// page at build time, so `next build` does not depend on a live backend.
+export const dynamic = "force-dynamic";
+
 export function generateMetadata() {
   return contentMetadata("دوره‌های آموزشی", "مسیرهای آموزشی فیلم‌نما در هنرهای نمایشی و مهارت‌های تخصصی", "/courses/");
 }

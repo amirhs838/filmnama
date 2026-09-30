@@ -8,6 +8,10 @@ import { contentMetadata } from "@/lib/content-seo";
 type Props = { params: Promise<{ "department-slug": string }> };
 export const revalidate = 3600;
 
+// Content comes from the backend API at request time: never prerender this
+// page at build time, so `next build` does not depend on a live backend.
+export const dynamic = "force-dynamic";
+
 export function generateStaticParams() {
   return [];
 }

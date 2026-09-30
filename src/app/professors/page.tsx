@@ -7,6 +7,10 @@ import { instructorPath } from "@/lib/content-contract";
 
 export const revalidate = 3600;
 
+// Content comes from the backend API at request time: never prerender this
+// page at build time, so `next build` does not depend on a live backend.
+export const dynamic = "force-dynamic";
+
 export function generateMetadata() {
   const meta = contentMetadata("اساتید", "اساتید آموزشگاه سینمایی فیلم نما", "/professors/");
   return { ...meta, title: { absolute: "اساتید - فیلم نما" } };
