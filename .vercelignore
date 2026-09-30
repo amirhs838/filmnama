@@ -1,0 +1,7 @@
+# Vercel deployment excludes (frontend project only)
+.env*
+backend/
+api/
+*.log
+.test-dist/
+coverage/
