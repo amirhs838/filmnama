@@ -10,6 +10,7 @@ import {
 } from "@/lib/admin-api";
 import { mediaSrc } from "@/lib/content-contract";
 import { Field, FormError, Select, SubmitButton, TextInput, Textarea } from "./AdminForm";
+import RichTextEditor from "./RichTextEditor";
 
 export const POST_STATUSES: AdminStatus[] = ["DRAFT", "PUBLISHED", "ARCHIVED"];
 
@@ -148,15 +149,13 @@ export default function PostForm({
           onChange={(event) => set("excerpt", event.target.value)}
         />
       </Field>
-      <Field htmlFor="post-content" label="محتوای HTML">
-        <Textarea
+      <Field htmlFor="post-content" label="محتوای نوشته">
+        <RichTextEditor
           id="post-content"
           name="contentHtml"
-          rows={8}
-          dir="ltr"
           value={form.contentHtml}
           disabled={isPending}
-          onChange={(event) => set("contentHtml", event.target.value)}
+          onChange={(next) => set("contentHtml", next)}
         />
       </Field>
       <div className="grid gap-4 sm:grid-cols-2">

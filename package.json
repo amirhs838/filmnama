@@ -11,6 +11,10 @@
     "test": "tsc src/lib/content.test.ts src/lib/admin-auth.test.ts src/lib/admin-api.test.ts src/lib/admin-pages.test.ts src/lib/carousel.test.ts --outDir .test-dist --module commonjs --moduleResolution node --target ES2022 --esModuleInterop --resolveJsonModule --strict --skipLibCheck && node --test .test-dist/content.test.js .test-dist/admin-auth.test.js .test-dist/admin-api.test.js .test-dist/admin-pages.test.js .test-dist/carousel.test.js"
   },
   "dependencies": {
+    "@tiptap/extension-link": "^3.31.4",
+    "@tiptap/extension-placeholder": "^3.31.4",
+    "@tiptap/react": "^3.31.4",
+    "@tiptap/starter-kit": "^3.31.4",
     "framer-motion": "^12.43.0",
     "lucide-react": "^1.27.0",
     "next": "16.2.12",

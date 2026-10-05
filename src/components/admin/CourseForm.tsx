@@ -10,6 +10,7 @@ import {
 } from "@/lib/admin-api";
 import { mediaSrc } from "@/lib/content-contract";
 import { Field, FormError, Select, SubmitButton, TextInput, Textarea } from "./AdminForm";
+import RichTextEditor, { isRichTextEmpty } from "./RichTextEditor";
 
 export const COURSE_ICON_KEYS: CourseIconKey[] = [
   "Drama",
@@ -123,9 +124,11 @@ export default function CourseForm({
       form.description,
       form.level,
       form.duration,
-      form.contentHtml,
     ];
-    if (required.some((value) => value.trim().length === 0)) {
+    if (
+      required.some((value) => value.trim().length === 0) ||
+      isRichTextEmpty(form.contentHtml)
+    ) {
       setLocalError(REQUIRED_MESSAGE);
       return;
     }
@@ -275,18 +278,13 @@ export default function CourseForm({
           ))}
         </Select>
       </Field>
-      <Field htmlFor="course-content" label="محتوای HTML">
-        <Textarea
+      <Field htmlFor="course-content" label="محتوای دوره">
+        <RichTextEditor
           id="course-content"
           name="contentHtml"
-          rows={8}
-          required
-          dir="ltr"
           value={form.contentHtml}
           disabled={isPending}
-          onChange={(event) => set("contentHtml", event.target.value)}
-          aria-invalid={localError ? true : undefined}
-          aria-describedby={describedBy}
+          onChange={(next) => set("contentHtml", next)}
         />
       </Field>
       <Field htmlFor="course-syllabus" label="سرفصل‌ها" hint="هر خط یک سرفصل">
